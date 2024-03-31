@@ -1,75 +1,81 @@
-## Atividade 01 - 2024/01 - Exercício de Configuração de Rede em Docker
+## Firewall IPTABLES - Lista de Exercícios
 
-Você foi designado para configurar um ambiente de rede em Docker para uma empresa fictícia. Este ambiente deve incluir serviços essenciais de rede, como DHCP, DNS e Firewall, para garantir conectividade e segurança adequadas. Você deve configurar cada serviço em um container Docker separado e garantir que eles se comuniquem adequadamente entre si. Além disso, é necessário criar Dockerfiles para cada imagem necessária, com base na imagem ubuntu:latest, e realizar testes para validar a configuração da rede.
+Elabore as regras necessárias para implementar os seguintes controles. Utilize para isso as
+regras do firewall Linux (netfilter/iptables).
+
+1. Libere qualquer tráfego para interface de loopback no firewall.
+
+2. Estabeleça a política DROP (restritiva) para as chains INPUT e FORWARD da tabela filter.
+
+3. Possibilite que usuários da rede interna possam acessar o serviço WWW, tanto na porta (TCP) 80 como na 443. Não esqueça de realizar NAT já que os usuários internos não possuem um endereço IP válido.
+
+4. Faça LOG e bloqueie o acesso a qualquer site que contenha a palavra “games”.
+
+5. Bloqueie acesso para qualquer usuário ao site www.jogosonline.com.br, exceto para seu chefe, que possui o endereço IP 10.1.1.100.
+
+6. Permita que o firewall receba pacotes do tipo ICMP echo-request (ping), porém, limite a 5 pacotes por segundo.
+
+7. Permita que tanto a rede interna como a DMZ possam realizar consultas ao DNS externo, bem como, receber os resultados das mesmas.
+
+8. Permita o tráfego TCP destinado à máquina 192.168.1.100 (DMZ) na porta 80, vindo de qualquer rede (Interna ou Externa).
+
+9. Redirecione pacotes TCP destinados ao IP 200.20.5.1 porta 80, para a máquina 192.168.1.100 que está localizado na DMZ.
+
+10. Faça com que a máquina 192.168.1.100 consiga responder os pacotes TCP recebidos na porta 80 corretamente.
+
+Preste atenção, os serviços do tipo cliente x servidor, dependem de pacotes de respostas, sendo assim,
+é necessário criar regras que aceitem os pacotes de respostas. Você pode também utilizar o módulo
+state para realizar esta tarefa.
 
 ## Estrutura do Projeto
 
-- dockerfile.dhcp
-- dockerfile.dns
-- dockerfile.firewall
-- dhcpd.conf (arquivo de configuração necessário para DHCP)
-- firewall_rules.sh (arquivo de configuração necessário para FIREWALL)
-- named.conf.options (arquivo de configuração necessário para DNS)
-- README.md
+- firewall.dockerfile (arquivo de configuração necessário para criação do FIREWALL)
+- firewall_rules.sh (arquivo necessário para configuração do FIREWALL)
+- README.md (arquivo de instruções)
 
 ## Pré-requisitos
 
 - Considerar sistema de criação (HOST) Linux Mint 21.3
 - Docker 24.0.5
 
-## Rede
+## Topoligia da Rede
+
+- Topologia de uma rede contando com a internet ligado a um roteador, que passa por um firewall. No firewall, a entrada é a ETH, com duas saídas, ETH0 e ETH1, para a ETH0 passa para uma rede interna para os usuários e um servidor corporativo, já a ETH1 passa por um DMZ e chega a um servidor Web, FTP e emails.
+
+- Configurações da rede:
+  - Rede Interna: 10.1.1.0/24 ETH0: 10.1.1.1/24
+  - DMZ: 192.168.1.0/24 ETH1: 192.168.1.1/24
+  - Rede Externa: 200.20.5.0/30 ETH2: 200.20.5.1/30
+
+## Configuração da Rede do Container
 
 - A rede foi configurada com o nome "rede" e o endereço "192.168.1.0/24", com o comando "sudo docker network create --subnet=192.168.1.0/24 rede".
 
-- Então para se deve usar o "--net rede" para cada container, para que eles possam se comunicar entre si, na mesma rede. Como mostrado acima, na aba de instrução de uso.
+- Então para que o container esteja dentro da rede se deve usar o "--net rede" no comando de execução para cada container, para que eles possam se comunicar entre si, na mesma rede.
 
 - Para verificar se a rede foi criada use o comando "sudo docker network ls".
-
-- ![rede](imgs/rede.png) <br> Mostra a rede criada.
 
 ## Instruções de Uso
 
 1. Clone o repositório do Github.
 2. Acesse-o pelo terminal a pasta onde o projeto foi clonado.
-3. Execute o comando "sudo docker build -t orlandofilho04/dhcp:latest -f dockerfile.dhcp ." para iniciar a criação do container DHCP.
-4. Execute o comando "sudo docker build -t orlandofilho04/dns:latest -f dockerfile.dns ." para iniciar a criação do container DNS.
-5. Execute o comando "sudo docker build -t orlandofilho04/firewall:latest -f dockerfile.firewall ." para iniciar a criação do container FIREWALL.
-6. Após a criação do container DHCP, digite "sudo docker run -d --net rede --name dhcp orlandofilho04/dhcp" para iniciar a execução do container DHCP.
-7. Após a criação do container DNS, digite "sudo docker run -d --net rede --name dns orlandofilho04/dns" para iniciar a execução do container DNS.
-8. Após a criação do container FIREWALL, digite "sudo docker run -d --name firewall --restart always --net rede --privileged orlandofilho04/firewall" para iniciar a execução do container FIREWALL.
-9. Se necessário adentrar no container em execução use "sudo docker exec -it (dhcp/dns/firewall) /bin/bash", apenas usando um das três opções dos nomes atribuidos em cada um dos containers.
-10. Se necessário parar a execução do container "sudo docker stop (dhcp/dns/firewall)", apenas usando um das três opções dos nomes atribuidos em cada um dos containers.
+3. Execute o comando "sudo docker build -t orlandofilho04/firewall:latest -f firewall.dockerfile ." para iniciar a criação do container FIREWALL.
+4. Após a criação do container FIREWALL, digite "sudo docker run -d --name firewall --restart always --net rede --privileged orlandofilho04/firewall" para iniciar a execução do container FIREWALL.
+5. Se necessário adentrar no container em execução use "sudo docker exec -it firewall /bin/bash".
+6. Se necessário parar a execução do container "sudo docker stop firewall".
 
 ## Funcionamento
 
-- Container DHCP. O container foi configurado com um arquivo chamado "dhcp.conf", o qual contém as configurações necessárias para o serviço DHCP. Para seu funcionamento também foi aberta a porta 67/UDP no container, permitindo que o servidor DHCP atribua endereços IP a novos dispositivos que se conectem à rede por meio dessa porta, foi separado a faixa da rede 192.168.1.100 a 192.168.1.200 para se atribuir aos demais containers.
-
-- Container DNS. O container foi configurado com um arquivo chamado "named.conf.options", o qual contém as configurações necessárias para o serviço DNS. Para seu funcionamento também foi aberta a porta 53 TCP/UDP, afim de realizar a resolução dos nomes na rede.
-
-- Container FIREWALL. O container foi configurado com um arquivo chamado "firewall_rules.sh", o qual contém as configurações necessárias para o serviço FIREWALL. Seu funcionamento consiste em bloquear o acesso de todas as portas e liberando somente para as portas DHCP e DNS liberadas nos containers anteriores.
+- Container FIREWALL: O container foi configurado com um arquivo chamado "firewall_rules.sh", o qual contém as configurações necessárias para o serviço FIREWALL. Seu funcionamento consiste na implementação dos controles de acesso à rede, conforme as regras estabelecidas no enunciado do exercício.
 
 ## Testes
 
-- DHCP:
-
-  - Para testar o funcionamento do servidor DHCP, basta conectar um novo dispositivo à rede e verificar se ele recebe um endereço IP automaticamente. Isso pode ser feito por meio do comando "ip a" no terminal do dispositivo.
-  - Ou, adentrar o container DHCP e verificar se os endereços estão sendo atribuídos. Com o seguinte comando "tail -f /var/log/dhcpd.log", deve retornar os endereços atribuídos.
-  - E por fim a melhor maneira de se testar, conferir se o ip dos outros containers ficaram corretos. Para isso se deve entrar nos containers "dns" ou "firewall" e verificar se o ip atribuido foi colocado de forma correta e esteja dentro da faixa de ip determinada (192.168.1.100 a 192.168.1.200).
-  - ![ip_dns](imgs/ip_dns.png) <br> Mostra o ip configurado do container DNS.
-
-  - ![ip_firewall](imgs/ip_firewall.png) <br> Mostra o ip configurado do container FIREWALL.
-
-- DNS:
-
-  - Para testar o funcionamento do servidor DNS, basta tentar acessar um site por meio de seu nome, em vez de seu endereço IP. Isso pode ser feito por meio do comando "ping" no terminal do dispositivo.
-  - Ou, adentrar o container DNS e verificar se os endereços estão sendo resolvidos. Com o seguinte comando "tail -f /var/log/named/named.log", deve retornar os endereços resolvidos.
-  - Ou, adentrar o container DNS e verificar se os nomes estão resolvidos. Com o seguinte comando "dig www.example.com". Assim com algum site em espeiífico, deve retornar o ip relacionado a esse endereço.
-  - ![teste_dns](imgs/teste_dns.png) <br> Mostra o site com o nome resolvido pelo DNS.
-
 - FIREWALL:
 
-  - Para testar o funcionamento do FIREWALL, basta tentar acessar um site por meio de seu nome, em vez de seu endereço IP. Isso pode ser feito por meio do comando "ping" no terminal do dispositivo.
-  - Ou, adentrar o container FIREWALL e verificar se as portas estão bloqueadas. Com o seguinte comando "iptables -L", deve retornar as portas bloqueadas e liberadas. E o retorno deve ser apenas a visualização das das portas liberadas, ou seja, as portas do container "dns" e "dhcp", sendo elas 53 e 67:68 respectivamente.
-  - ![firewall_no_dns](imgs/firewall_no_dns.png) <br> Mostra que a porta 53 está liberada no FIREWALL.
-
-  - ![firewall_portas_liberadas](imgs/firewall_portas_liberadas.png) <br> Mostra quais as portas estão liberadas no FIREWALL.
+1. Acesse o container FIREWALL.
+2. Execute o comando "iptables -L" para verificar as regras de firewall.
+3. Execute o comando "iptables -t nat -L" para verificar as regras de NAT.
+4. Execute o comando "iptables -t mangle -L" para verificar as regras de MANGLE.
+5. Execute o comando "iptables -t raw -L" para verificar as regras de RAW.
+6. Execute o comando "iptables -t security -L" para verificar as regras de SECURITY.
+7. Execute o comando "iptables -t filter -L" para verificar as regras de FILTER.
