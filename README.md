@@ -70,7 +70,8 @@ state para realizar esta tarefa.
 
 ## Funcionamento
 
-- Container FIREWALL: O container foi configurado com um arquivo chamado "firewall_rules.sh", o qual contém as configurações necessárias para o serviço FIREWALL. Seu funcionamento consiste na implementação dos controles de acesso à rede, conforme as regras estabelecidas no enunciado do exercício.
+- FIREWALL:
+  - O container foi configurado com um arquivo chamado "firewall_rules.sh", o qual contém as configurações necessárias para o serviço FIREWALL. Seu funcionamento consiste na implementação dos controles de acesso à rede, conforme as regras estabelecidas no enunciado do exercício.
 
 ## Testes
 
