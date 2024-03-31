@@ -42,6 +42,10 @@ state para realizar esta tarefa.
 
 - Topologia de uma rede contando com a internet ligado a um roteador, que passa por um firewall. No firewall, a entrada é a ETH, com duas saídas, ETH0 e ETH1, para a ETH0 passa para uma rede interna para os usuários e um servidor corporativo, já a ETH1 passa por um DMZ e chega a um servidor Web, FTP e emails.
 
+  ![rede](imgs/topologia.png) <br>
+
+  - Mostra a topologia mencionada.
+
 - Configurações da rede:
   - Rede Interna: 10.1.1.0/24 ETH0: 10.1.1.1/24
   - DMZ: 192.168.1.0/24 ETH1: 192.168.1.1/24
